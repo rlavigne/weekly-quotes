@@ -75,6 +75,66 @@
 <body>
   <div id="container"></div>
   <script>
+    // Définir toutes les variables globales au début
+    var bottomStartDate = new Date('2024-11-18');
+    var weeksPerYear = 52;
+    var topYears = 40;
+    var minimumBottomYears = 40;
+    var topWeeks = topYears * weeksPerYear;  // Définir topWeeks explicitement
+    
+    // Calculs simplifiés
+    var bottomWeeks = minimumBottomYears * weeksPerYear;
+    var extraWeeksNeeded = bottomWeeks % 52 === 0 ? 0 : 52 - (bottomWeeks % 52);
+    var totalBottomWeeks = bottomWeeks + extraWeeksNeeded;
+    var bottomRows = Math.ceil(totalBottomWeeks / 52);
+    
+    // Attendre que le DOM soit chargé
+    window.onload = function() {
+        try {
+            var container = document.getElementById('container');
+            
+            // Définir les rangées de la grille
+            container.style.gridTemplateRows = 'repeat(' + topYears + ', 1fr) 160px repeat(' + bottomRows + ', 1fr)';
+            
+            // Section du haut
+            for (var i = 0; i < topWeeks; i++) {
+                var weekDiv = document.createElement('div');
+                weekDiv.className = 'week filled';
+                container.appendChild(weekDiv);
+            }
+            
+            // Section citation
+            var quoteDiv = document.createElement('div');
+            quoteDiv.id = 'quote';
+            quoteDiv.textContent = quotes[0]; // Utiliser directement le premier quote
+            container.appendChild(quoteDiv);
+            
+            // Section du bas
+            var currentIndex = getCurrentWeekIndex();
+            for (var i = 0; i < totalBottomWeeks; i++) {
+                var weekDiv = document.createElement('div');
+                if (i < currentIndex) {
+                    weekDiv.className = 'week filled';
+                } else if (i === currentIndex) {
+                    weekDiv.className = 'week filling';
+                    var progress = getWeeklyProgress() * 100;
+                    weekDiv.style.backgroundImage = '-webkit-linear-gradient(left, black ' + 
+                        progress + '%, rgb(205, 205, 205) ' + progress + '%)';
+                } else {
+                    weekDiv.className = 'week';
+                }
+                container.appendChild(weekDiv);
+            }
+            
+            // Mettre à jour toutes les minutes
+            setInterval(updateCurrentWeek, 60000);
+            
+        } catch(e) {
+            console.log('Erreur:', e);
+            alert('Une erreur est survenue: ' + e.message);
+        }
+    };
+
     function scheduleRefresh() {
       const now = new Date();
       const night = new Date(
@@ -95,21 +155,6 @@
   
     // Démarrer le planificateur
     scheduleRefresh();
-
-    var bottomStartDate = new Date('2024-11-18');
-    var weeksPerYear = 52;
-    var topYears = 40;
-    var minimumBottomYears = 40;
-    
-    // Calculate rows needed for bottom section
-    const bottomWeeks = minimumBottomYears * weeksPerYear;
-    const extraWeeksNeeded = bottomWeeks % 52 === 0 ? 0 : 52 - (bottomWeeks % 52);
-    const totalBottomWeeks = bottomWeeks + extraWeeksNeeded;
-    const bottomRows = Math.ceil(totalBottomWeeks / 52);
-    
-    // Set grid template rows dynamically
-    const container = document.getElementById('container');
-    container.style.gridTemplateRows = `repeat(40, 1fr) 160px repeat(${bottomRows}, 1fr)`;
 
     const quotes = [
       "« Rien n’est plus satisfaisant que de deviner correctement les deux chiffres du Super 7… même si t’as rien gagné. »",
@@ -166,41 +211,6 @@
         }
       }
     }
-
-    // Remplacer la création des éléments avec une approche plus compatible
-    var container = document.getElementById('container');
-
-    // Create top section (all filled)
-    for (var i = 0; i < topWeeks; i++) {
-      var weekDiv = document.createElement('div');
-      weekDiv.className = 'week filled';
-      container.appendChild(weekDiv);
-    }
-
-    // Add quote section
-    var quoteDiv = document.createElement('div');
-    quoteDiv.id = 'quote';
-    quoteDiv.textContent = randomQuote();
-    container.appendChild(quoteDiv);
-
-    // Create bottom section
-    var currentIndex = getCurrentWeekIndex();
-    for (var i = 0; i < totalBottomWeeks; i++) {
-      var weekDiv = document.createElement('div');
-      weekDiv.className = 'week';
-      if (i < currentIndex) {
-        weekDiv.className = 'week filled';
-      } else if (i === currentIndex) {
-        weekDiv.className = 'week filling';
-        weekDiv.style.backgroundImage = 'linear-gradient(to right, black ' + 
-          (getWeeklyProgress() * 100) + '%, rgb(205, 205, 205) ' + 
-          (getWeeklyProgress() * 100) + '%)';
-      }
-      container.appendChild(weekDiv);
-    }
-
-    // Update progress every minute
-    setInterval(updateCurrentWeek, 60000);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
