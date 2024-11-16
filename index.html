@@ -55,6 +55,7 @@
     }
 
     .filling {
+      background: -webkit-linear-gradient(left, black calc(var(--progress) * 100%), rgb(205, 205, 205) calc(var(--progress) * 100%));
       background: linear-gradient(to right, black calc(var(--progress) * 100%), rgb(205, 205, 205) calc(var(--progress) * 100%));
     }
 
@@ -95,10 +96,10 @@
     // Démarrer le planificateur
     scheduleRefresh();
 
-    const bottomStartDate = new Date('2024-11-18');
-    const weeksPerYear = 52;
-    const topYears = 40;
-    const minimumBottomYears = 40;
+    var bottomStartDate = new Date('2024-11-18');
+    var weeksPerYear = 52;
+    var topYears = 40;
+    var minimumBottomYears = 40;
     
     // Calculate rows needed for bottom section
     const bottomWeeks = minimumBottomYears * weeksPerYear;
@@ -115,10 +116,10 @@
     ];
 
     function getStartOfWeek(date) {
-      const result = new Date(date);
+      var result = new Date(date);
       result.setHours(0, 0, 0, 0);
-      const day = result.getDay();
-      const diff = result.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+      var day = result.getDay();
+      var diff = result.getDate() - day + (day === 0 ? -6 : 1);
       result.setDate(diff);
       return result;
     }
@@ -144,18 +145,19 @@
     }
 
     function updateCurrentWeek() {
-      const currentIndex = getCurrentWeekIndex();
+      var currentIndex = getCurrentWeekIndex();
       
-      // Remove old filling class and add filled to previous weeks
-      document.querySelectorAll('.week').forEach((week, index) => {
-        if (index < topYears * weeksPerYear) return; // Skip top section
+      document.querySelectorAll('.week').forEach(function(week, index) {
+        if (index < topYears * weeksPerYear) return;
         
-        const bottomIndex = index - (topYears * weeksPerYear) - 1; // Adjust for quote div
+        var bottomIndex = index - (topYears * weeksPerYear) - 1;
         if (bottomIndex < currentIndex) {
           week.className = 'week filled';
         } else if (bottomIndex === currentIndex) {
           week.className = 'week filling';
-          week.style.setProperty('--progress', getWeeklyProgress());
+          week.style.backgroundImage = 'linear-gradient(to right, black ' + 
+            (getWeeklyProgress() * 100) + '%, rgb(205, 205, 205) ' + 
+            (getWeeklyProgress() * 100) + '%)';
         } else {
           week.className = 'week';
         }
