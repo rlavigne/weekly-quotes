@@ -146,11 +146,14 @@
 
     function updateCurrentWeek() {
       var currentIndex = getCurrentWeekIndex();
+      var weeks = document.getElementsByClassName('week');
       
-      document.querySelectorAll('.week').forEach(function(week, index) {
-        if (index < topYears * weeksPerYear) return;
+      // Utilisation d'une boucle for traditionnelle au lieu de forEach
+      for (var i = 0; i < weeks.length; i++) {
+        var week = weeks[i];
+        if (i < topYears * weeksPerYear) continue;
         
-        var bottomIndex = index - (topYears * weeksPerYear) - 1;
+        var bottomIndex = i - (topYears * weeksPerYear) - 1;
         if (bottomIndex < currentIndex) {
           week.className = 'week filled';
         } else if (bottomIndex === currentIndex) {
@@ -161,33 +164,37 @@
         } else {
           week.className = 'week';
         }
-      });
+      }
     }
 
+    // Remplacer la création des éléments avec une approche plus compatible
+    var container = document.getElementById('container');
+
     // Create top section (all filled)
-    const topWeeks = topYears * weeksPerYear;
-    for (let i = 0; i < topWeeks; i++) {
-      const weekDiv = document.createElement('div');
+    for (var i = 0; i < topWeeks; i++) {
+      var weekDiv = document.createElement('div');
       weekDiv.className = 'week filled';
       container.appendChild(weekDiv);
     }
 
     // Add quote section
-    const quoteDiv = document.createElement('div');
+    var quoteDiv = document.createElement('div');
     quoteDiv.id = 'quote';
     quoteDiv.textContent = randomQuote();
     container.appendChild(quoteDiv);
 
     // Create bottom section
-    const currentIndex = getCurrentWeekIndex();
-    for (let i = 0; i < totalBottomWeeks; i++) {
-      const weekDiv = document.createElement('div');
+    var currentIndex = getCurrentWeekIndex();
+    for (var i = 0; i < totalBottomWeeks; i++) {
+      var weekDiv = document.createElement('div');
       weekDiv.className = 'week';
       if (i < currentIndex) {
-        weekDiv.classList.add('filled');
+        weekDiv.className = 'week filled';
       } else if (i === currentIndex) {
-        weekDiv.classList.add('filling');
-        weekDiv.style.setProperty('--progress', getWeeklyProgress());
+        weekDiv.className = 'week filling';
+        weekDiv.style.backgroundImage = 'linear-gradient(to right, black ' + 
+          (getWeeklyProgress() * 100) + '%, rgb(205, 205, 205) ' + 
+          (getWeeklyProgress() * 100) + '%)';
       }
       container.appendChild(weekDiv);
     }
