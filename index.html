@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- iOS specific meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Life Frame">
+  
+  <!-- Icons for iOS -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="icon-167.png">
+  
+  <!-- Splash screens -->
+  <link rel="apple-touch-startup-image" href="splash.png">
+  
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <title>Weekly Progress</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alumni+Sans+Pinstripe:ital@0;1&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 2px;
+      font-family: 'Alumni Sans Pinstripe', cursive;
+      background: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    #container {
+      display: grid;
+      grid-template-columns: repeat(52, 1fr);
+      width: calc(100vw - 4px);
+      height: calc(100vh - 4px);
+      gap: 3px;
+    }
+
+    .week {
+      border-radius: 1px;
+      background: rgb(205, 205, 205);
+      box-sizing: border-box;
+    }
+
+    .filled {
+      background: black;
+    }
+
+    .filling {
+      background: linear-gradient(to right, black calc(var(--progress) * 100%), rgb(205, 205, 205) calc(var(--progress) * 100%));
+    }
+
+    #quote {
+      grid-column: 1 / span 52;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size:30px;
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  <script>
+    function scheduleRefresh() {
+      const now = new Date();
+      const night = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1, // le jour suivant
+        0, // minuit
+        0, // 0 minutes
+        1  // 1 seconde après minuit
+      );
+      
+      const timeout = night.getTime() - now.getTime();
+      setTimeout(function() {
+        window.location.reload();
+        scheduleRefresh(); // planifie le prochain rafraîchissement
+      }, timeout);
+    }
+  
+    // Démarrer le planificateur
+    scheduleRefresh();
+
+    const bottomStartDate = new Date('2024-11-18');
+    const weeksPerYear = 52;
+    const topYears = 40;
+    const minimumBottomYears = 40;
+    
+    // Calculate rows needed for bottom section
+    const bottomWeeks = minimumBottomYears * weeksPerYear;
+    const extraWeeksNeeded = bottomWeeks % 52 === 0 ? 0 : 52 - (bottomWeeks % 52);
+    const totalBottomWeeks = bottomWeeks + extraWeeksNeeded;
+    const bottomRows = Math.ceil(totalBottomWeeks / 52);
+    
+    // Set grid template rows dynamically
+    const container = document.getElementById('container');
+    container.style.gridTemplateRows = `repeat(40, 1fr) 160px repeat(${bottomRows}, 1fr)`;
+
+    const quotes = [
+      "« Rien n’est plus satisfaisant que de deviner correctement les deux chiffres du Super 7… même si t’as rien gagné. »",
+    ];
+
+    function getStartOfWeek(date) {
+      const result = new Date(date);
+      result.setHours(0, 0, 0, 0);
+      const day = result.getDay();
+      const diff = result.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+      result.setDate(diff);
+      return result;
+    }
+
+    function getCurrentWeekIndex() {
+      const today = new Date();
+      const startOfCurrentWeek = getStartOfWeek(today);
+      return Math.floor((startOfCurrentWeek - bottomStartDate) / (7 * 24 * 60 * 60 * 1000));
+    }
+
+    function getWeeklyProgress() {
+      const today = new Date();
+      const startOfWeek = getStartOfWeek(today);
+      const nextWeek = new Date(startOfWeek);
+      nextWeek.setDate(startOfWeek.getDate() + 7);
+      
+      // Calculate progress through the week (0 to 1)
+      return (today - startOfWeek) / (nextWeek - startOfWeek);
+    }
+
+    function randomQuote() {
+      return quotes[Math.floor(Math.random() * quotes.length)];
+    }
+
+    function updateCurrentWeek() {
+      const currentIndex = getCurrentWeekIndex();
+      
+      // Remove old filling class and add filled to previous weeks
+      document.querySelectorAll('.week').forEach((week, index) => {
+        if (index < topYears * weeksPerYear) return; // Skip top section
+        
+        const bottomIndex = index - (topYears * weeksPerYear) - 1; // Adjust for quote div
+        if (bottomIndex < currentIndex) {
+          week.className = 'week filled';
+        } else if (bottomIndex === currentIndex) {
+          week.className = 'week filling';
+          week.style.setProperty('--progress', getWeeklyProgress());
+        } else {
+          week.className = 'week';
+        }
+      });
+    }
+
+    // Create top section (all filled)
+    const topWeeks = topYears * weeksPerYear;
+    for (let i = 0; i < topWeeks; i++) {
+      const weekDiv = document.createElement('div');
+      weekDiv.className = 'week filled';
+      container.appendChild(weekDiv);
+    }
+
+    // Add quote section
+    const quoteDiv = document.createElement('div');
+    quoteDiv.id = 'quote';
+    quoteDiv.textContent = randomQuote();
+    container.appendChild(quoteDiv);
+
+    // Create bottom section
+    const currentIndex = getCurrentWeekIndex();
+    for (let i = 0; i < totalBottomWeeks; i++) {
+      const weekDiv = document.createElement('div');
+      weekDiv.className = 'week';
+      if (i < currentIndex) {
+        weekDiv.classList.add('filled');
+      } else if (i === currentIndex) {
+        weekDiv.classList.add('filling');
+        weekDiv.style.setProperty('--progress', getWeeklyProgress());
+      }
+      container.appendChild(weekDiv);
+    }
+
+    // Update progress every minute
+    setInterval(updateCurrentWeek, 60000);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
