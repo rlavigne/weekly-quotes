@@ -18,16 +18,11 @@
   <!-- Splash screens -->
   <link rel="apple-touch-startup-image" href="splash.png">
   
-  <!-- PWA manifest -->
-  <link rel="manifest" href="manifest.json">
-  
   <title>Weekly Progress</title>
-  <link href="https://fonts.googleapis.com/css2?family=Euphoria+Script&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
       padding: 20px;
-      font-family: 'Euphoria Script', sans-serif;
       background: #ffffff;
       display: flex;
       justify-content: center;
@@ -37,100 +32,71 @@
     }
 
     #container {
+      display: -webkit-grid;
       display: grid;
+      -webkit-grid-template-columns: repeat(52, 1fr);
       grid-template-columns: repeat(52, 1fr);
       width: calc(100vw - 40px);
       height: calc(100vh - 40px);
+      -webkit-overflow-scrolling: touch;
     }
 
     .week {
-      border-radius: 2px;
+      -webkit-border-radius: 20px;
+      border-radius: 20px;
       background: rgb(205, 205, 205);
-      box-sizing: border-box;
-      margin: 2px;
-      width: calc(100% - 4px);
-      height: calc(100% - 4px);
+      width: calc(100% - 3px);
+      height: calc(100% - 3px);
     }
 
     .filled {
       background: black;
-    }
-
-    .filling {
-      background: -webkit-linear-gradient(left, black calc(var(--progress) * 100%), rgb(205, 205, 205) calc(var(--progress) * 100%));
-      background: linear-gradient(to right, black calc(var(--progress) * 100%), rgb(205, 205, 205) calc(var(--progress) * 100%));
-    }
-
-    #quote {
-      grid-column: 1 / span 52;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size:30px;
-      padding: 15px;
-      text-align: center;
-      font-weight: 400;
-      color: #000000;
     }
   </style>
 </head>
 <body>
   <div id="container"></div>
   <script>
-    // Définir toutes les variables globales au début
-    var bottomStartDate = new Date('2024-11-18');
+    // Utiliser var au lieu de const/let pour iOS 10.3
+    var startDate = new Date('1984-11-18');
     var weeksPerYear = 52;
-    var topYears = 40;
-    var minimumBottomYears = 40;
-    var topWeeks = topYears * weeksPerYear;  // Définir topWeeks explicitement
-    
-    // Calculs simplifiés
-    var bottomWeeks = minimumBottomYears * weeksPerYear;
-    var extraWeeksNeeded = bottomWeeks % 52 === 0 ? 0 : 52 - (bottomWeeks % 52);
-    var totalBottomWeeks = bottomWeeks + extraWeeksNeeded;
-    var bottomRows = Math.ceil(totalBottomWeeks / 52);
-    
-    // Attendre que le DOM soit chargé
+    var totalYears = 80;
+    var totalWeeks = totalYears * weeksPerYear;
+
+    function getRandomColor() {
+        var colors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+            '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB',
+            '#E74C3C', '#2ECC71', '#F1C40F', '#1ABC9C'
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
     window.onload = function() {
         try {
             var container = document.getElementById('container');
+            var currentWeekIndex = getCurrentWeekIndex();
             
-            // Définir les rangées de la grille
-            container.style.gridTemplateRows = 'repeat(' + topYears + ', 1fr) 160px repeat(' + bottomRows + ', 1fr)';
+            // Utiliser une chaîne de caractères pour la grille
+            var rowCount = Math.ceil(totalWeeks/52);
+            container.style.webkitGridTemplateRows = 'repeat(' + rowCount + ', 1fr)';
+            container.style.gridTemplateRows = 'repeat(' + rowCount + ', 1fr)';
             
-            // Section du haut
-            for (var i = 0; i < topWeeks; i++) {
+            // Créer tous les cercles
+            for (var i = 0; i < totalWeeks; i++) {
                 var weekDiv = document.createElement('div');
-                weekDiv.className = 'week filled';
-                container.appendChild(weekDiv);
-            }
-            
-           // Section citation
-          var quoteDiv = document.createElement('div');
-          quoteDiv.id = 'quote';
-          var randomIndex = Math.floor(Math.random() * quotes.length); // Génère un index aléatoire
-          quoteDiv.textContent = quotes[randomIndex];
-          container.appendChild(quoteDiv);
-            
-            // Section du bas
-            var currentIndex = getCurrentWeekIndex();
-            for (var i = 0; i < totalBottomWeeks; i++) {
-                var weekDiv = document.createElement('div');
-                if (i < currentIndex) {
-                    weekDiv.className = 'week filled';
-                } else if (i === currentIndex) {
-                    weekDiv.className = 'week filling';
-                    var progress = getWeeklyProgress() * 100;
-                    weekDiv.style.backgroundImage = '-webkit-linear-gradient(left, black ' + 
-                        progress + '%, rgb(205, 205, 205) ' + progress + '%)';
-                } else {
-                    weekDiv.className = 'week';
+                weekDiv.className = 'week';
+                
+                if (i < currentWeekIndex) {
+                    weekDiv.className += ' filled';
+                    weekDiv.style.background = getRandomColor();
                 }
+                
                 container.appendChild(weekDiv);
             }
             
-            // Mettre à jour toutes les minutes
-            setInterval(updateCurrentWeek, 60000);
+            // Vérifier une fois par heure
+            setInterval(updateCurrentWeek, 3600000);
             
         } catch(e) {
             console.log('Erreur:', e);
@@ -138,604 +104,22 @@
         }
     };
 
-    function scheduleRefresh() {
-      const now = new Date();
-      const night = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() + 1, // le jour suivant
-        0, // minuit
-        0, // 0 minutes
-        1  // 1 seconde après minuit
-      );
-      
-      const timeout = night.getTime() - now.getTime();
-      setTimeout(function() {
-        window.location.reload();
-        scheduleRefresh(); // planifie le prochain rafraîchissement
-      }, timeout);
-    }
-  
-    // Démarrer le planificateur
-    scheduleRefresh();
-
-    const quotes = [
-      "La vie, c’est comme une boîte de chocolats, t’es jamais sûr sur quoi tu vas tomber… mais au moins, c’est du chocolat !",
-      "Profite de la vie ! On n’en a qu’une… à moins de te réincarner en mouffette, là t’en auras peut-être deux.",
-      "Y’a deux sortes de monde : ceux qui profitent de la vie, pis ceux qui regardent les autres en profiter. Fais-toi pas avoir, embarque !",
-      "Lâche pas la patate ! La vie est trop courte pour manger des patates molles.",
-      "Si la vie te donne des citrons, fais-toi une limonade… pis vends-la sur le bord du chemin pour te payer un voyage dans le Sud.",
-      "Arrête de te casser la tête ! La vie est déjà assez compliquée comme ça. Relaxe pis va prendre une bière sur une terrasse.",
-      "Travailler fort, c’est important… mais se rappeler de s’amuser, c’est encore plus important !",
-      "La vie est un cadeau, déballe-le au complet ! Pis si t’aimes pas ce qu’il y a dedans, échange-le au magasin.",
-      "Faut pas avoir peur de prendre des risques ! C’est comme ça qu’on découvre des nouvelles affaires… pis des nouvelles bibittes.",
-      "Si t’as envie de chanter dans la douche, fais-le ! Y’a personne qui va te juger… à part peut-être le chat.",
-      "La vie, c’t’un marathon pas un sprint… sauf si y’a des beignes à l’arrivée, là c’est un sprint !",
-      "Ris de bon cœur, ça fait travailler les abdos… pis ça fait peur aux pigeons.",
-      "Si t’es capable de rire de toi-même, t’auras jamais fini de rire.",
-      "La beauté est dans l’œil de celui qui regarde… sauf si t’es saoul, là la beauté est partout.",
-      "Faut pas prendre la vie trop au sérieux, personne n’en sort vivant de toute façon.",
-      "Profite du moment présent ! Demain, tu pourrais te réveiller avec une coupe Longueuil.",
-      "L’important c’est pas la destination, c’est le voyage… surtout si t’as un char avec l’air climatisé.",
-      "Apprends de tes erreurs… mais fais-en des nouvelles, ça serait plate de toujours répéter les mêmes.",
-      "Sois toi-même, tout le monde est déjà pris… sauf peut-être les extraterrestres, là tu peux essayer de les imiter.",
-      "La vie est comme une bicyclette, faut avancer pour pas perdre l’équilibre… sauf si t’es sur un tandem, là tu peux te fier sur l’autre.",
-      "Aime ton prochain… mais garde un œil sur ton assiette de chips.",
-      "Si tu tombes, relève-toi ! Pis si tu peux pas te relever, fais semblant que t’es en train de faire des redressements assis.",
-      "N’aie pas peur d’être différent, c’est ce qui te rend unique… comme une licorne avec une moustache.",
-      "La vie est une fête ! Sors tes plus beaux habits… pis ton plus beau speedo.",
-      "Chante comme si personne ne t’entendait… danse comme si personne ne te regardait… pis mange comme si c’était ta dernière journée sur terre.",
-      "Sois heureux ! C’est contagieux… comme la gastro, mais en plus le fun.",
-      "Fais ce que tu aimes… sauf si ce que tu aimes c’est voler des banques, là trouve-toi un autre hobby.",
-      "La vie est courte, mange le dessert en premier… pis garde la salade pour le compost.",
-      "Ne remets pas à demain ce que tu peux faire aujourd’hui… sauf si c’est le ménage, là tu peux attendre à la semaine prochaine.",
-      "Apprécie les petites choses de la vie… comme un bon café, une poutine bien chaude, pis un orignal qui traverse la rue.",
-      "La vie, c’est comme une montagne russe : y’a des hauts, y’a des bas… pis y’a des moments où t’as juste envie de vomir.",
-      "N’aie pas peur de vieillir, c’est un privilège que plusieurs n’ont pas… comme les mouches à fruits.",
-      "Le bonheur, c’est comme un pet : ça vient de l’intérieur… pis ça fait du bien quand ça sort.",
-      "Si la vie te donne des claques, tends l’autre joue… pis donne un coup de pied dans les valseuses.",
-      "L’optimisme, c’est voir le verre à moitié plein… le pessimisme, c’est voir le verre à moitié vide… le réalisme, c’est voir un verre qui a besoin d’être rempli.",
-      "Ne juge pas un livre à sa couverture… sauf si c’est un livre de recettes, là tu peux juger en fonction des photos.",
-      "L’amitié, c’est comme une bonne paire de pantoufles : c’est confortable, pis ça te garde les pieds au chaud.",
-      "La patience est une vertu… sauf quand t’es pris en ligne à la SAQ un vendredi soir.",
-      "L’amour, c’est comme un feu de foyer : faut l’entretenir pour pas qu’il s’éteigne… pis faire attention de pas mettre le feu à la maison.",
-      "La musique adoucit les mœurs… sauf le death metal, ça rend juste agressif.",
-      "Danse comme si personne ne te regardait… chante comme si personne ne t’entendait… pis habille-toi comme si tu t’en allais à une soirée costumée.",
-      "La vie est un mystère… comme la recette de la sauce brune de ma grand-mère.",
-      "Ne te prends pas la tête avec des choses que tu ne peux pas contrôler… comme la météo, le prix du gaz, pis les décisions du gouvernement.",
-      "Vis chaque jour comme si c’était le dernier… pis fais le party comme si c’était le jour de l’An.",
-      "L’imagination est plus importante que la connaissance… sauf si t’es en train de passer un examen, là la connaissance est pas mal importante.",
-      "Sois spontané ! Fais des choses imprévues… comme te teindre les cheveux en bleu ou partir en voyage sur un coup de tête.",
-      "La vie est trop courte pour être plate… ajoute du piquant avec des aventures, des fous rires, pis des histoires à raconter à tes petits-enfants.",
-      "N’aie pas peur de dire ce que tu penses… sauf si tu penses que ton boss est un incompétent, là garde ça pour toi.",
-      "Le succès, c’est pas la destination, c’est le voyage… pis le voyage est plus le fun si t’as un GPS.",
-      "La liberté, c’est de pouvoir faire ce que tu veux… tant que ça ne dérange pas personne… pis que ça respecte le Code criminel.",
-      "La vie, c’est comme une boîte de poutine : c’est chaud, c’est gras, pis ça fait du bien au moral.",
-      "N’aie pas peur de tes rêves, poursuis-les ! … à moins que tes rêves ce soit de voler dans une licorne géante qui pète des arcs-en-ciel, là c’est peut-être un peu irréaliste.",
-      "Le bonheur, c’est comme un Tim Hortons : y’en a un à chaque coin de rue.",
-      "Si tu te sens perdu, demande ton chemin… pis si la personne te répond en charabia, fais semblant de comprendre et continue ton chemin.",
-      "La vie est une aventure, explore-la ! … mais apporte une carte, une boussole, pis un rouleau de papier de toilette, on sait jamais.",
-      "Ris de bon cœur, ça fait du bien à l’âme… pis ça donne des rides, mais des belles rides.",
-      "Ne te compare pas aux autres, tu es unique ! … comme un flocon de neige… sauf qu’au lieu d’être fait d’eau, t’es fait de joie et de bonne humeur.",
-      "L’amour, c’est comme une chanson de Céline Dion : ça peut être intense, ça peut être dramatique, mais ça finit toujours par te faire pleurer.",
-      "Si la vie te donne des oranges, fais du jus… pis si t’as pas de presse-agrumes, lance-les sur tes ennemis.",
-      "Le travail, c’est la santé… à condition de pas trop en faire, sinon c’est la maladie.",
-      "La vie, c’est comme un sac de chips : une fois que t’as commencé, c’est difficile d’arrêter.",
-      "N’aie pas peur de l’échec, c’est le meilleur moyen d’apprendre… à condition de pas répéter les mêmes erreurs, sinon t’es juste niaiseux.",
-      "Le bonheur, c’est comme une queue de castor : c’est sucré, c’est réconfortant, pis ça te colle aux doigts.",
-      "Si tu te sens stressé, prends une grande respiration… pis crie « TABARNAK ! » ça va te faire du bien.",
-      "La vie est une scène, joue ton rôle ! … mais assure-toi d’avoir appris tes répliques, sinon tu vas avoir l’air fou.",
-      "Ris de bon cœur, ça attire les amis… pis les oiseaux, mais les oiseaux c’est moins le fun.",
-      "Ne te prends pas trop au sérieux, personne d’autre ne le fait… sauf peut-être les politiciens, mais eux c’est une autre histoire.",
-      "L’amour, c’est comme une cabane à sucre : c’est sucré, c’est collant, pis ça finit toujours par te donner mal au ventre.",
-      "Si la vie te donne des bananes, fais une tarte… pis si t’as pas de farine, mange-les comme ça, c’est bon pour la santé.",
-      "Le travail, c’est comme une paire de vieilles chaussettes : c’est pas toujours agréable, mais ça te garde les pieds au chaud.",
-      "La vie, c’est comme une game de hockey : ça se joue en trois périodes, pis y’a toujours des chances de gagner en prolongation.",
-      "N’aie pas peur de tes émotions, laisse-les sortir ! … à moins que ce soit de la rage incontrôlable, là va peut-être consulter un professionnel.",
-      "Le bonheur, c’est comme une p’tite frette sur une terrasse en été : ça rafraîchit, ça fait du bien, pis ça donne envie de chanter.",
-      "Si tu te sens dépassé, prends un break ! … pis va faire un tour de char avec les fenêtres baissées en criant des niaiseries.",
-      "La vie est une improvisation, sois créatif ! … mais garde un plan B au cas où ton plan A te pète à la face.",
-      "Ris de bon cœur, ça fait fuir les mauvais esprits… pis les maringouins, ce qui est encore plus important.",
-      "Ne te compare pas aux autres, chacun son rythme ! … comme les escargots, certains sont rapides, d’autres sont lents, mais ils finissent tous par arriver à destination.",
-      "L’amour, c’est comme un feu d’artifice : c’est beau, c’est intense, mais ça dure pas longtemps… sauf si t’as acheté le gros kit à 100 $.",
-      "Si la vie te donne des patates, fais de la purée ! … pis si t’as pas de beurre, mets-y du fromage en grains, c’est meilleur de toute façon.",
-      "Le travail, c’est comme une boîte de kleenex : t’en as toujours besoin, mais ça finit toujours par se vider.",
-      "La vie, c’est comme une chanson à répondre : y’a des couplets, y’a des refrains, pis y’a des moments où tu peux improviser.",
-      "N’aie pas peur du changement, c’est le piment de la vie ! … à moins que ce soit un changement de couche de bébé à 3 h du matin, là c’est moins le fun.",
-      "Le bonheur, c’est comme un bol de soupe aux pois : c’est chaud, c’est réconfortant, pis ça te fait péter.",
-      "Si tu te sens seul, appelle un ami ! … pis si y répond pas, laisse-lui un message vocal quétaine avec une chanson de Roch Voisine en arrière-plan.",
-      "La vie est un jeu, amuse-toi ! … mais triche pas, à moins que tu joues à Monopoly, là toutes les techniques sont permises.",
-      "Ris de bon cœur, ça te donne des joues roses… pis un double menton, mais on s’en fout.",
-      "Ne juge pas les gens sur leur apparence, ils pourraient te surprendre ! … comme un livreur de pizza qui se transforme en ninja la nuit.",
-      "L’amour, c’est comme une guimauve : c’est doux, c’est sucré, pis ça fond dans ta bouche… pis ça colle dans tes dents.",
-      "Si la vie te donne des tomates, fais une salade ! … pis si t’as pas de vinaigrette, mets-y du ketchup, c’est presque pareil.",
-      "Le travail, c’est comme un film plate : ça dure longtemps, pis t’as juste envie que ça finisse.",
-      "La vie, c’est comme une tarte aux bleuets : c’est sucré, c’est acidulé, pis ça tache.",
-      "N’aie pas peur de dire non, c’est ton droit ! … sauf si ta grand-mère t’offre une deuxième portion de tourtière, là tu dis oui.",
-      "Le bonheur, c’est comme un spa : ça détend, ça fait du bien, pis ça coûte cher.",
-      "Si tu te sens découragé, regarde un film de Rocky ! … pis crie « Adrian ! » à la fin, même si t’es tout seul chez toi.",
-      "La vie est un cadeau, déballe-le avec joie ! … mais fais attention de pas déchirer le papier, on sait jamais si on peut le réutiliser.",
-      "Ris de bon cœur, ça te rend plus jeune… enfin, ça te donne l’impression d’être plus jeune, mais c’est déjà ça.",
-      "Ne juge pas les gens sur leurs goûts musicaux, chacun ses plaisirs coupables ! … même si c’est du Patrick Sébastien à fond la caisse.",
-      "L’amour, c’est comme une paire de mitaines : ça vient en paire, pis ça te garde les mains au chaud… sauf si t’en perds une, là t’as juste froid.",
-      "Si la vie te donne des concombres, fais des cornichons ! … pis si t’as pas de vinaigre, mange-les avec du sel, c’est rafraîchissant.",
-      "Le travail, c’est comme un rhume : ça arrive quand t’en as pas besoin, pis ça dure longtemps.",
-      "La vie, c’est comme une soirée de karaoke : y’a des moments forts, y’a des moments faibles, pis y’a des moments où t’as juste envie de te cacher.",
-      "N’aie pas peur de tes défauts, assume-les ! … à moins que ton défaut ce soit de manger des crottes de nez, là essaie peut-être de te contrôler.",
-      "Le bonheur, c’est comme un bon livre : ça te transporte dans un autre monde, pis ça te fait oublier tes problèmes.",
-      "Si tu te sens nerveux, mâche de la gomme ! … pis fais des bulles, ça va impressionner tes ennemis.",
-      "La vie est une toile, peins-la à tes couleurs ! … mais utilise de la bonne peinture, sinon ça va s’effacer au premier lavage.",
-      "Ris de bon cœur, ça te donne bonne mine… sauf si tu ris tellement fort que tu deviens rouge comme une tomate.",
-      "Ne juge pas les gens sur leur accent, c’est ce qui fait leur charme ! … même si c’est un accent du Saguenay-Lac-Saint-Jean tellement prononcé que tu comprends rien.",
-      "L’amour, c’est comme une pizza : y’en a pour tous les goûts, pis c’est toujours meilleur quand c’est partagé.",
-      "Si la vie te donne des citrouilles, fais une tarte ! … pis si t’as pas le temps, sculpte-les en Jack-o’-lantern, c’est plus facile.",
-      "Le travail, c’est comme une chanson de Noël : t’en entends trop souvent, pis ça finit par te taper sur les nerfs.",
-      "La vie, c’est comme une boîte de céréales : y’a plein de surprises dedans… sauf si t’achètes toujours la même sorte, là t’es juste poche.",
-      "N’aie pas peur de demander de l’aide, t’es pas tout seul ! … sauf si t’es perdu en forêt, là y’a des chances que t’sois tout seul.",
-      "Le bonheur, c’est comme un bain chaud : ça relaxe, ça fait du bien, pis ça donne envie de dormir.",
-      "Si tu te sens triste, écoute de la musique entraînante ! … pis danse comme un fou, même si t’as l’air d’un épouvantail qui a pris vie.",
-      "La vie est un voyage, profite du paysage ! … mais garde les yeux sur la route, sinon tu vas finir dans le décor.",
-      "Ris de bon cœur, ça fait travailler les muscles du visage… pis ça te donne des rides d’expression, mais des belles rides d’expression.",
-      "Ne juge pas les gens sur leur âge, ils ont tous une histoire à raconter ! … même si c’est l’histoire de comment ils ont gagné un concours de mangeurs de hot-dogs en 1987.",
-      "L’amour, c’est comme un bon vin : ça s’améliore avec le temps… à condition de le conserver dans un endroit frais et sec, sinon ça tourne au vinaigre.",
-      "Si la vie te donne des oignons, fais une soupe à l’oignon gratinée ! … pis si t’as pas de fromage, mets-y des croûtons, c’est presque aussi bon.",
-      "Le travail, c’est comme une mauvaise herbe : ça pousse tout seul, pis c’est difficile à éliminer.",
-      "La vie, c’est comme une partie de cartes : t’as pas toujours les bonnes cartes en main, mais tu peux quand même gagner la partie.",
-      "N’aie pas peur de prendre des décisions, c’est toi le maître de ta vie ! … sauf si ta décision",
-      "La vie, c’est comme une soirée de danse en ligne : faut suivre le rythme, faut pas se tromper de pas, pis faut surtout pas lâcher son partenaire.",
-      "N’aie pas peur de tes idées, partage-les ! … à moins que tes idées ce soit de remplacer les routes par des rivières de sirop d’érable, là, ça risque d’être collant.",
-      "Le bonheur, c’est comme un bon film d’horreur : ça te fait crier, ça te fait sursauter, pis ça te donne envie de dormir avec la lumière allumée… mais c’est tellement excitant !",
-      "Si tu te sens fatigué, va faire un tour de traîneau à chiens ! … pis si t’as pas de chiens, attache-toi un balai à fesses et glisse sur la neige, ça marche aussi.",
-      "La vie est un cadeau, déballe-le avec enthousiasme ! … même si c’est un cadeau un peu bizarre, genre un chapeau qui chante des chansons de Céline Dion.",
-      "Ne juge pas les gens sur leur choix de sport, ils ont peut-être juste envie de se muscler les mollets !",
-      "Si la vie te donne des pommes, fais une tarte ! … pis si t’as pas de pâte, mange-les avec du caramel, c’est un dessert digne d’un roi.",
-      "La vie, c’est comme une partie de pêche : ça demande de la patience, ça demande de la technique, pis ça finit toujours par une prise… ou par un gros poisson qui te file entre les doigts.",
-      "N’aie pas peur de tes rêves, réalise-les ! … à moins que tes rêves ce soit de devenir champion du monde de lancer de la guimauve, là concentre-toi sur quelque chose de plus ambitieux.",
-      "Le bonheur, c’est comme un bon concert de musique classique : ça te transporte dans un autre monde, ça te fait oublier tes soucis, pis ça te donne envie de jouer du violon.",
-      "Si tu te sens stressé, va faire du yoga dans un parc ! … pis si t’as peur des écureuils, fais du yoga chez toi, c’est plus sécuritaire.",
-      "La vie est un cadeau, savoure chaque instant ! … même les moments un peu plates, genre quand t’es coincé dans un embouteillage monstre sur l’autoroute.",
-      "L’amour, c’est comme un bon livre de science-fiction : ça te fait voyager dans l’espace, ça te fait découvrir de nouvelles planètes, pis ça te donne envie de rencontrer des extraterrestres.",
-      "La vie, c’est comme une cabane à sucre : c’est sucré, c’est collant, pis ça te donne envie d’y retourner chaque année.",
-      "La vie, c'est comme une montagne russe : y'a des hauts, y'a des bas, pis y'a des moments où t'as juste envie de vomir... mais au moins, t'as du vent dans les cheveux !",
-      "N'aie pas peur de vieillir, c'est un privilège que plusieurs n'ont pas... comme les poissons rouges.",
-      "Le bonheur, c'est comme un pet : ça vient de l'intérieur... pis ça fait du bien quand ça sort, mais fais attention où tu le fais.",
-      "Si la vie te donne des claques, tends l'autre joue... pis donne un coup de poing dans les valseuses !",
-      "L'optimisme, c'est voir le verre à moitié plein... le pessimisme, c'est voir le verre à moitié vide... le réalisme, c'est se dire qu'il faudrait peut-être remplir ce verre.",
-      "Ne juge pas un livre à sa couverture... sauf si c'est un livre de blagues, là tu peux juger en fonction des illustrations.",
-      "L'amitié, c'est comme une bonne paire de pantoufles : c'est confortable, pis ça te garde les pieds au chaud... sauf si ton ami a des pieds qui puent.",
-      "La patience est une vertu... sauf quand t'es pris en ligne à la caisse du Costco un samedi après-midi.",
-      "L'amour, c'est comme un feu de foyer : faut l'entretenir pour pas qu'il s'éteigne... pis faire attention de pas brûler la cabane.",
-      "La musique adoucit les mœurs... sauf le heavy metal, ça donne juste envie de headbanger comme un fou.",
-      "Danse comme si personne ne te regardait... chante comme si personne ne t'entendait... pis mange comme si c'était ta dernière journée sur terre... mais fais attention de pas t'étouffer.",
-      "Sois heureux ! C'est contagieux... comme le rire, mais en plus durable.",
-      "Fais ce que tu aimes... sauf si ce que tu aimes c'est faire des mauvais coups, là trouve-toi un autre passe-temps.",
-      "La vie est courte, mange le dessert en premier... pis garde la salade pour le lapin.",
-      "Ne remets pas à demain ce que tu peux faire aujourd'hui... sauf si c'est le repassage, là tu peux attendre la semaine prochaine.",
-      "Apprécie les petites choses de la vie... comme un bon café, une poutine bien chaude, pis un écureuil qui fait des acrobaties dans les arbres.",
-      "La vie, c'est comme une montagne russe : y'a des hauts, y'a des bas... pis y'a des moments où t'as juste envie de fermer les yeux et crier.",
-      "N'aie pas peur de l'échec, c'est le meilleur moyen d'apprendre... à condition de pas faire exprès de te planter, là t'es juste paresseux.",
-      "Le bonheur, c'est comme une queue de castor : c'est sucré, c'est réconfortant, pis ça te donne envie d'en reprendre une deuxième.",
-      "Si tu te sens stressé, prends une grande respiration... pis compte jusqu'à 10... ou jusqu'à 100 si t'es vraiment stressé.",
-      "La vie est une scène, joue ton rôle ! ... mais assure-toi de connaître ton texte, sinon tu vas te planter.",
-      "Ris de bon cœur, ça attire les amis... pis les chiens, mais les chiens c'est plus fidèle.",
-      "Ne te prends pas trop au sérieux, personne d'autre ne le fait... sauf peut-être les chats, mais eux ils s'en fichent.",
-      "L'amour, c'est comme une cabane à sucre : c'est sucré, c'est collant, pis ça finit toujours par te donner mal au ventre... mais c'est tellement bon !",
-      "Si la vie te donne des bananes, fais une tarte... pis si t'as pas de farine, mange-les comme ça, c'est plein de potassium.",
-      "Le travail, c'est comme une paire de vieilles chaussettes : c'est pas toujours agréable, mais ça te garde les pieds au chaud... sauf si y'a des trous dedans.",
-      "La vie, c'est comme une game de hockey : ça se joue en trois périodes, pis y'a toujours des chances de gagner en prolongation... sauf si t'es nul en hockey.",
-      "N'aie pas peur de tes émotions, laisse-les sortir ! ... à moins que ce soit de la colère, là va peut-être faire un tour dehors pour te calmer.",
-      "Le bonheur, c'est comme une p'tite frette sur une terrasse en été : ça rafraîchit, ça fait du bien, pis ça donne envie de chanter... faux.",
-      "Si tu te sens dépassé, prends un break ! ... pis va faire un tour de vélo en criant des niaiseries... mais fais attention aux voitures.",
-      "La vie est une improvisation, sois créatif ! ... mais garde un plan B au cas où ton plan A te pète à la face... et un plan C, juste au cas.",
-      "Ris de bon cœur, ça fait fuir les mauvais esprits... pis les moustiques, ce qui est encore plus important en été.",
-      "Ne te compare pas aux autres, chacun son rythme ! ... comme les tortues, certaines sont rapides, d'autres sont lentes, mais elles finissent toutes par arriver à destination... un jour.",
-      "L'amour, c'est comme un feu d'artifice : c'est beau, c'est intense, mais ça dure pas longtemps... sauf si t'as acheté le gros kit à 100 $... et que tu sais comment le faire durer.",
-      "Si la vie te donne des patates, fais de la purée ! ... pis si t'as pas de beurre, mets-y du fromage en grains, c'est meilleur de toute façon... et plus québécois.",
-      "Le travail, c'est comme une boîte de kleenex : t'en as toujours besoin, mais ça finit toujours par se vider... et il faut en racheter.",
-      "La vie, c'est comme une chanson à répondre : y'a des couplets, y'a des refrains, pis y'a des moments où tu peux improviser... mais fais attention de pas te perdre dans ta chanson.",
-      "N'aie pas peur du changement, c'est le piment de la vie ! ... à moins que ce soit un changement de couche de bébé à 3 h du matin, là c'est moins le fun... sauf si t'aimes ça.",
-      "Le bonheur, c'est comme un bol de soupe aux pois : c'est chaud, c'est réconfortant, pis ça te fait péter... mais ça te garde au chaud l'hiver.",
-      "Si tu te sens seul, appelle un ami ! ... pis si y répond pas, laisse-lui un message vocal quétaine avec une chanson de Roch Voisine en arrière-plan... ça va le faire rire.",
-      "La vie est un jeu, amuse-toi ! ... mais triche pas, à moins que tu joues à Monopoly, là toutes les techniques sont permises... sauf voler la banque.",
-      "Ris de bon cœur, ça te donne des joues roses... pis un double menton, mais on s'en fout... tant que t'es heureux.",
-      "Ne juge pas les gens sur leur apparence, ils pourraient te surprendre ! ... comme un livreur de pizza qui se transforme en ninja la nuit... pour livrer des pizzas plus vite.",
-      "L'amour, c'est comme une guimauve : c'est doux, c'est sucré, pis ça fond dans ta bouche... pis ça colle dans tes dents... mais c'est tellement bon !",
-      "Si la vie te donne des tomates, fais une salade ! ... pis si t'as pas de vinaigrette, mets-y du ketchup, c'est presque pareil... mais en moins santé.",
-      "Le travail, c'est comme un film plate : ça dure longtemps, pis t'as juste envie que ça finisse... pour pouvoir aller te coucher.",
-      "La vie, c'est comme une tarte aux bleuets : c'est sucré, c'est acidulé, pis ça tache... mais c'est tellement bon avec de la crème glacée !",
-      "N'aie pas peur de dire non, c'est ton droit ! ... sauf si ta grand-mère t'offre une deuxième portion de tourtière, là tu dis oui... et tu la remercies.",
-      "Le bonheur, c'est comme un spa : ça détend, ça fait du bien, pis ça coûte cher... mais ça vaut la peine de se gâter de temps en temps.",
-      "Si tu te sens découragé, regarde un film de Rocky ! ... pis crie « Adrian ! » à la fin, même si t'es tout seul chez toi... ça va te remonter le moral.",
-      "La vie est un cadeau, déballe-le avec joie ! ... mais fais attention de pas déchirer le papier, on sait jamais si on peut le réutiliser... pour emballer un autre cadeau.",
-      "Ris de bon cœur, ça te rend plus jeune... enfin, ça te donne l'impression d'être plus jeune, mais c'est déjà ça... de se sentir jeune.",
-      "Ne juge pas les gens sur leurs goûts musicaux, chacun ses plaisirs coupables ! ... même si c'est du Patrick Sébastien à fond la caisse... dans son auto.",
-      "L'amour, c'est comme une paire de mitaines : ça vient en paire, pis ça te garde les mains au chaud... sauf si t'en perds une, là t'as juste froid... à une main.",
-      "Si la vie te donne des concombres, fais des cornichons ! ... pis si t'as pas de vinaigre, mange-les avec du sel, c'est rafraîchissant... et ça croque sous la dent.",
-      "Le travail, c'est comme un rhume : ça arrive quand t'en as pas besoin, pis ça dure longtemps... et ça t'empêche de profiter de la vie.",
-      "La vie, c'est comme une soirée de karaoke : y'a des moments forts, y'a des moments faibles, pis y'a des moments où t'as juste envie de te cacher... sous la table.",
-      "N'aie pas peur de tes défauts, assume-les ! ... à moins que ton défaut ce soit de manger des crottes de nez, là essaie peut-être de te contrôler... en public.",
-      "Le bonheur, c'est comme un bon livre : ça te transporte dans un autre monde, pis ça te fait oublier tes problèmes... jusqu'à ce que tu finisses le livre.",
-      "Si tu te sens nerveux, mâche de la gomme ! ... pis fais des bulles, ça va impressionner tes ennemis... ou les faire rire.",
-      "La vie est une toile, peins-la à tes couleurs ! ... mais utilise de la bonne peinture, sinon ça va s'effacer au premier lavage... et tu devras recommencer.",
-      "Ris de bon cœur, ça te donne bonne mine... sauf si tu ris tellement fort que tu deviens rouge comme une tomate... et que tu t'étouffes.",
-      "Ne juge pas les gens sur leur accent, c'est ce qui fait leur charme ! ... même si c'est un accent du Saguenay-Lac-Saint-Jean tellement prononcé que tu comprends rien... mais que tu trouves ça sympathique.",
-      "L'amour, c'est comme une pizza : y'en a pour tous les goûts, pis c'est toujours meilleur quand c'est partagé... sauf si ton ami est un gourmand.",
-      "Si la vie te donne des citrouilles, fais une tarte ! ... pis si t'as pas le temps, sculpte-les en Jack-o'-lantern, c'est plus facile... et ça fait peur aux enfants.",
-      "Le travail, c'est comme une chanson de Noël : t'en entends trop souvent, pis ça finit par te taper sur les nerfs... surtout après le 1er décembre.",
-      "La vie, c'est comme une boîte de céréales : y'a plein de surprises dedans... sauf si t'achètes toujours la même sorte, là t'es juste poche... et prévisible.",
-      "N'aie pas peur de demander de l'aide, t'es pas tout seul ! ... sauf si t'es perdu en forêt, là y'a des chances que t'sois tout seul... et qu'il faille te débrouiller seul.",
-      "Le bonheur, c'est comme un bain chaud : ça relaxe, ça fait du bien, pis ça donne envie de dormir... mais fais attention de pas t'endormir dans le bain.",
-      "Si tu te sens triste, écoute de la musique entraînante ! ... pis danse comme un fou, même si t'as l'air d'un épouvantail qui a pris vie... ça va te faire du bien.",
-      "La vie est un voyage, profite du paysage ! ... mais garde les yeux sur la route, sinon tu vas finir dans le décor... et ça va faire mal.",
-      "Ris de bon cœur, ça fait travailler les muscles du visage... pis ça te donne des rides d'expression, mais des belles rides d'expression... qui montrent que tu as vécu.",
-      "Ne juge pas les gens sur leur âge, ils ont tous une histoire à raconter ! ... même si c'est l'histoire de comment ils ont gagné un concours de mangeurs de hot-dogs en 1987... ça peut être intéressant.",
-      "L'amour, c'est comme un bon vin : ça s'améliore avec le temps... à condition de le conserver dans un endroit frais et sec, sinon ça tourne au vinaigre... et ça devient imbuvable.",
-      "Si la vie te donne des oignons, fais une soupe à l'oignon gratinée ! ... pis si t'as pas de fromage, mets-y des croûtons, c'est presque aussi bon... et ça croque sous la dent.",
-      "Le travail, c'est comme une mauvaise herbe : ça pousse tout seul, pis c'est difficile à éliminer... mais ça peut être utile si tu sais comment t'en servir.",
-      "La vie, c'est comme une partie de cartes : t'as pas toujours les bonnes cartes en main, mais tu peux quand même gagner la partie... avec un peu de stratégie et de chance.",
-      "N'aie pas peur de prendre des décisions, c'est toi le maître de ta vie ! ... sauf si ta décision c'est de sauter en parachute sans parachute, là c'est pas une bonne décision.",
-      "Le bonheur, c'est comme un bon chocolat chaud : ça réchauffe le cœur, ça réconforte, pis ça te donne envie de te blottir dans une couverture... devant un bon film.",
-      "Si tu te sens perdu, demande ton chemin... pis si la personne te répond en charabia, fais semblant de comprendre et continue ton chemin... tu finiras bien par trouver ta route.",
-      "La vie est une aventure, explore-la ! ... mais apporte une carte, une boussole, pis un rouleau de papier de toilette, on sait jamais... ce qui peut arriver.",
-      "Ris de bon cœur, ça fait du bien à l'âme... pis ça donne des rides, mais des belles rides... qui racontent ton histoire.",
-      "Ne te compare pas aux autres, tu es unique ! ... comme un flocon de neige... sauf qu'au lieu d'être fait d'eau, t'es fait de chocolat et de bonheur.",
-      "L'amour, c'est comme une chanson de Céline Dion : ça peut être intense, ça peut être dramatique, mais ça finit toujours par te faire pleurer... de joie ou de tristesse.",
-      "Si la vie te donne des oranges, fais du jus... pis si t'as pas de presse-agrumes, lance-les sur tes ennemis... mais attention de pas te faire mal.",
-      "Le travail, c'est la santé... à condition de pas trop en faire, sinon c'est la maladie... et ça t'empêche de profiter de la vie.",
-      "La vie, c'est comme un sac de chips : une fois que t'as commencé, c'est difficile d'arrêter... surtout si c'est tes chips préférées.",
-      "N'aie pas peur de l'échec, c'est le meilleur moyen d'apprendre... à condition de pas répéter les mêmes erreurs, sinon t'es juste têtu... comme une mule.",
-      "Le bonheur, c'est comme une queue de castor : c'est sucré, c'est réconfortant, pis ça te colle aux doigts... mais c'est tellement bon qu'on s'en fout.",
-      "Si tu te sens stressé, prends une grande respiration... pis crie « TABARNAK ! » ça va te faire du bien... mais fais attention de pas effrayer les gens autour.",
-      "La vie est une scène, joue ton rôle ! ... mais assure-toi d'avoir appris tes répliques, sinon tu vas avoir l'air fou... comme un acteur qui a oublié son texte.",
-      "Ris de bon cœur, ça attire les amis... pis les oiseaux, mais les oiseaux c'est moins le fun... à moins que tu aimes les oiseaux.",
-      "Ne te prends pas trop au sérieux, personne d'autre ne le fait... sauf peut-être les politiciens, mais eux c'est une autre histoire... qu'on a pas envie d'entendre.",
-      "L'amour, c'est comme une cabane à sucre : c'est sucré, c'est collant, pis ça finit toujours par te donner mal au ventre... mais ça vaut le coup.",
-      "Si la vie te donne des patates, fais de la purée ! ... pis si t'as pas de beurre, mets-y de la crème fraîche, c'est plus léger... et plus français.",
-      "Le travail, c'est comme une boîte de kleenex : t'en as toujours besoin, mais ça finit toujours par se vider... et il faut aller en racheter.",
-      "La vie, c'est comme une chanson à répondre : y'a des couplets, y'a des refrains, pis y'a des moments où tu peux improviser... mais fais attention de pas chanter faux.",
-      "N'aie pas peur du changement, c'est le piment de la vie ! ... à moins que ce soit un changement de couche de bébé à 3 h du matin, là c'est moins épicé... et plus odorant.",
-      "Le bonheur, c'est comme un bol de soupe aux pois : c'est chaud, c'est réconfortant, pis ça te fait péter... mais ça te remplit l'estomac.",
-      "Si tu te sens seul, appelle un ami ! ... pis si y répond pas, laisse-lui un message vocal avec une imitation de Jean-Pierre Ferland... ça va lui faire plaisir.",
-      "La vie est un jeu, joue-la avec fair-play ! ... sauf si tu joues aux cartes avec ton grand-père, là, laisse-le gagner, il sera content.",
-      "Ris de bon cœur, ça éloigne les rides... enfin, ça les cache un peu, mais c'est déjà ça.",
-      "Ne juge pas les gens sur leurs vêtements, ils ont peut-être juste oublié de faire leur lavage ! ... ou ils ont un style unique.",
-      "L'amour, c'est comme une bonne blague : ça fait rire, ça rapproche les gens... et parfois, ça tombe à plat.",
-      "Si la vie te donne des poires, fais une compote ! ... et si t'as pas de sucre, mets-y du miel, c'est plus naturel.",
-      "Le travail, c'est comme un long tunnel : ça peut paraître interminable, mais il y a toujours une lumière au bout... enfin, on l'espère.",
-      "La vie, c'est comme une pizza hawaïenne : on aime ou on aime pas, mais ça a le mérite d'exister.",
-      "N'aie pas peur de dire ce que tu penses... sauf si tu penses que ton voisin chante comme une casserole, là, garde ça pour toi.",
-      "Le bonheur, c'est comme une piscine : ça rafraîchit, ça détend... et ça peut être dangereux si tu ne sais pas nager.",
-      "Si tu te sens dépassé, prends un moment pour toi... et va crier dans la forêt, ça va te libérer.",
-      "La vie est un cadeau, ouvre-le avec curiosité ! ... même si tu ne sais pas ce qu'il y a dedans, ça peut être une belle surprise.",
-      "L'amour, c'est comme un bon café : ça réveille, ça stimule... et ça peut te rendre accro.",
-      "La vie, c'est comme un jeu vidéo : il y a des niveaux, des défis... et des boss à affronter.",
-      "N'aie pas peur de tes émotions, exprime-les ! ... sauf si c'est de la rage, là, va frapper dans un coussin.",
-      "Le bonheur, c'est comme un bon livre : ça te transporte, ça t'évade... et ça te fait oublier le temps.",
-      "Si tu te sens triste, va marcher sous la pluie ! ... ça va te laver les idées, et en plus, c'est bon pour le teint.",
-      "La vie est un voyage, explore de nouveaux horizons ! ... mais n'oublie pas ton passeport.",
-      "Ris de bon cœur, ça fait du bien au moral... et aux zygomatiques.",
-      "Ne juge pas les gens sur leurs opinions, chacun a le droit de penser ce qu'il veut... même si tu n'es pas d'accord.",
-      "L'amour, c'est comme un arc-en-ciel : c'est beau, c'est coloré... et ça disparaît aussi vite qu'il est apparu.",
-      "Si la vie te donne des carottes, fais un gâteau ! ... et si t'as pas de farine, mange-les crues, c'est bon pour la vue.",
-      "Le travail, c'est comme une paire de chaussures : il faut trouver la bonne pointure pour être à l'aise.",
-      "La vie, c'est comme une chanson : il y a des hauts, des bas... et des refrains qui reviennent sans cesse.",
-      "N'aie pas peur de demander pardon, c'est une preuve de courage... et ça fait du bien à l'âme.",
-      "Le bonheur, c'est comme un feu de camp : ça réchauffe, ça rassemble... et ça fait peur aux moustiques.",
-      "Si tu te sens seul, adopte un animal de compagnie ! ... ça te tiendra compagnie, et en plus, c'est mignon.",
-      "La vie est une aventure, vis-la à fond ! ... mais n'oublie pas de mettre ta ceinture de sécurité.",
-      "Ris de bon cœur, ça te rend plus sympathique... et ça fait fuir les vampires.",
-      "Ne juge pas les gens sur leur passé, tout le monde a le droit à une seconde chance... même les politiciens.",
-      "L'amour, c'est comme un bon film : ça te fait rêver, ça te fait vibrer... et ça te donne envie de le revoir.",
-      "Si la vie te donne des brocolis, fais une quiche ! ... et si t'as pas d'œufs, mange-les avec de la mayonnaise, c'est original.",
-      "Le travail, c'est comme un puzzle : il faut trouver les bonnes pièces pour que tout s'assemble.",
-      "La vie, c'est comme une boîte de surprises : on ne sait jamais ce qu'on va y trouver... mais c'est toujours excitant.",
-      "N'aie pas peur de tes rêves, poursuis-les ! ... même si c'est de devenir astronaute, ça peut se réaliser.",
-      "Le bonheur, c'est comme un bon massage : ça détend, ça relaxe... et ça fait du bien au moral.",
-      "Si tu te sens stressé, va faire un tour en montagnes russes ! ... l'adrénaline va te faire oublier tes soucis.",
-      "La vie est un cadeau, apprécie-le ! ... même si ce n'est pas toujours facile, il y a toujours du positif à trouver.",
-      "L'amour, c'est comme un bon vin chaud : ça réchauffe le cœur, ça réconforte... et ça te fait oublier le froid de l'hiver.",
-      "La vie, c'est comme une randonnée en forêt : il y a des chemins faciles, des chemins difficiles... et des chemins qui te mènent à des endroits magnifiques.",
-      "N'aie pas peur de prendre des risques, c'est comme ça qu'on avance dans la vie ! ... mais assure-toi d'avoir un plan B au cas où ça tourne mal.",
-      "Le bonheur, c'est comme un bon bain moussant : ça détend, ça parfume... et ça fait des bulles.",
-      "Si tu te sens fatigué, fais une sieste ! ... et rêve de licornes qui mangent des barbe à papa.",
-      "La vie est une scène, amuse-toi à jouer différents rôles ! ... mais n'oublie pas qui tu es vraiment.",
-      "Ris de bon cœur, ça fait du bien aux abdos... et ça attire les bonnes ondes.",
-      "Ne juge pas les gens sur leur voiture, ils ont peut-être juste gagné au loto ! ... ou ils ont un bon crédit.",
-      "L'amour, c'est comme une bonne chanson : ça te reste dans la tête... et ça te donne envie de danser.",
-      "Si la vie te donne des épinards, fais une tarte ! ... et si t'as pas de pâte, mange-les à la Popeye, ça te donnera des muscles.",
-      "Le travail, c'est comme un oignon : ça fait pleurer... mais ça donne du goût à la vie.",
-      "La vie, c'est comme un Rubik's Cube : c'est compliqué, ça demande de la patience... mais quand tu réussis à le résoudre, t'es fier de toi.",
-      "N'aie pas peur de dire \"je t'aime\", ça fait toujours plaisir à entendre... sauf si tu le dis à ton poisson rouge.",
-      "Le bonheur, c'est comme un bon feu de cheminée : ça réchauffe, ça crépite... et ça te donne envie de griller des guimauves.",
-      "Si tu te sens stressé, va faire du karaoké ! ... chante à tue-tête, même si tu chantes faux, ça va te défouler.",
-      "La vie est un cadeau, savoure chaque instant ! ... même les plus petits, comme le chant des oiseaux ou le sourire d'un enfant.",
-      "L'amour, c'est comme un bon chocolat chaud : ça réchauffe le cœur et ça adoucit les mœurs.",
-      "La vie, c'est comme une partie de Monopoly : il faut savoir gérer son argent, investir intelligemment... et éviter la prison.",
-      "N'aie pas peur de tes faiblesses, elles font partie de toi... et elles te rendent humain.",
-      "Le bonheur, c'est comme un bon verre de vin : ça se déguste lentement... et avec modération.",
-      "Si tu te sens triste, regarde un film comique ! ... rire, c'est le meilleur remède contre la déprime.",
-      "La vie est un voyage, profite de chaque étape ! ... même les détours, ils peuvent te réserver de belles surprises.",
-      "Ris de bon cœur, ça illumine ton visage... et ça fait fuir les nuages.",
-      "Ne juge pas les gens sur leur couleur de peau, on est tous pareils à l'intérieur... sauf les Schtroumpfs.",
-      "L'amour, c'est comme une fleur : ça demande de l'attention, de l'eau... et beaucoup de soleil.",
-      "Si la vie te donne des avocats, fais une guacamole ! ... et si t'as pas de citron, mets-y du vinaigre, ça fera l'affaire.",
-      "Le travail, c'est comme une fourmilière : chacun a sa tâche... et tout le monde travaille ensemble.",
-      "La vie, c'est comme une boîte de Lego : il faut assembler les pièces pour construire quelque chose de beau.",
-      "N'aie pas peur de l'inconnu, c'est là que se cachent les plus belles aventures... mais prends une lampe de poche, on sait jamais.",
-      "Le bonheur, c'est comme un bon gâteau au chocolat : ça fait plaisir à tout le monde... sauf aux diabétiques.",
-      "Si tu te sens perdu, écoute ton cœur ! ... il te guidera sur le bon chemin.",
-      "La vie est un cadeau, partage-le avec ceux que tu aimes ! ... et n'oublie pas d'en garder un morceau pour toi.",
-      "Ris de bon cœur, ça rend la vie plus belle... et ça fait peur aux monstres.",
-      "Ne juge pas les gens sur leur religion, chacun a le droit de croire en ce qu'il veut... même aux licornes.",
-      "L'amour, c'est comme une pizza : il y en a pour tous les goûts... et c'est toujours meilleur quand c'est partagé.",
-      "Si la vie te donne des fraises, fais une tarte ! ... et si t'as pas de sucre, mange-les avec de la crème chantilly, c'est encore meilleur.",
-      "Le travail, c'est comme un marathon : ça demande de l'endurance, de la persévérance... et une bonne paire de chaussures.",
-      "La vie, c'est comme une chanson de Noël : ça revient chaque année... et ça finit par te rester dans la tête.",
-      "N'aie pas peur de faire des erreurs, c'est comme ça qu'on apprend ! ... sauf si tu es chirurgien, là, essaie de les éviter.",
-      "Le bonheur, c'est comme un bon livre : on a du mal à le lâcher... et on est triste quand il est fini.",
-      "Si tu te sens stressé, va faire un câlin à un arbre ! ... ça détend, et en plus, c'est bon pour la planète.",
-      "La vie est une aventure, explore des chemins inconnus ! ... mais n'oublie pas de laisser des petits cailloux pour retrouver ton chemin.",
-      "Ris de bon cœur, ça fait vibrer tes cordes vocales... et ça réveille tes voisins.",
-      "Ne juge pas les gens sur leur musique, chacun ses goûts ! ... même si c'est du yodeling à 6 heures du matin.",
-      "L'amour, c'est comme un bon feu de joie : ça réchauffe, ça éclaire... et ça fait des étincelles.",
-      "Si la vie te donne des prunes, fais une tarte ! ... et si t'as pas de pâte, mange-les avec du fromage, c'est délicieux.",
-      "Le travail, c'est comme une bicyclette : il faut pédaler pour avancer... mais attention aux côtes.",
-      "La vie, c'est comme une boîte de chocolats : il y a des bons, des moins bons... et des surprises.",
-      "N'aie pas peur de dire \"non\", c'est important de savoir se faire respecter... sauf si c'est ta maman qui te demande de ranger ta chambre.",
-      "Le bonheur, c'est comme un bon bain chaud : ça détend, ça relaxe... et ça fait du bien aux muscles.",
-      "Si tu te sens seul, appelle un ami et raconte-lui une blague ! ... rire ensemble, c'est le meilleur moyen de se rapprocher.",
-      "La vie est un cadeau, profite de chaque instant ! ... même les plus simples, comme un rayon de soleil ou une goutte de pluie.",
-      "L'amour, c'est comme une danse : il faut être deux pour que ça marche... et avoir le rythme.",
-      "La vie, c'est comme une partie d'échecs : il faut réfléchir avant d'agir... et ne pas perdre sa reine.",
-      "N'aie pas peur de tes émotions, elles te rendent vivant ! ... sauf si c'est la jalousie, là, essaie de la contrôler.",
-      "Le bonheur, c'est comme un bon film : ça te fait rêver, ça te fait voyager... et ça te laisse un souvenir agréable.",
-      "Si tu te sens triste, va faire du bénévolat ! ... aider les autres, ça fait du bien au moral.",
-      "La vie est un voyage, découvre de nouveaux paysages ! ... mais n'oublie pas de prendre des photos.",
-      "Ris de bon cœur, ça te donne de l'énergie... et ça fait fuir les mauvaises pensées.",
-      "Ne juge pas les gens sur leur apparence physique, la beauté est intérieure ! ... sauf si c'est un zombie, là, tu peux juger.",
-      "L'amour, c'est comme un jardin : ça demande de l'entretien, de la patience... et beaucoup d'amour.",
-      "Si la vie te donne des courgettes, fais un gratin ! ... et si t'as pas de fromage, mets-y des tomates, c'est plus léger.",
-      "Le travail, c'est comme une montagne : il faut s'accrocher pour arriver au sommet... mais la vue est magnifique.",
-      "La vie, c'est comme une chanson : il y a des paroles, une mélodie... et une histoire à raconter.",
-      "N'aie pas peur de tes rêves, ils peuvent se réaliser ! ... sauf si tu rêves de voler, là, il faudra peut-être prendre l'avion.",
-      "Le bonheur, c'est comme un bon repas entre amis : ça réchauffe le cœur et ça nourrit l'âme.",
-      "Si tu te sens stressé, va faire une promenade dans la nature ! ... le calme et la beauté des paysages te feront du bien.",
-      "La vie est un cadeau, déballe-le avec gratitude ! ... et remercie la personne qui te l'a offert.",
-      "Ris de bon cœur, ça te rend plus beau/belle... et ça fait briller tes yeux.",
-      "Ne juge pas les gens sur leur âge, on est tous jeunes dans notre tête ! ... sauf les bébés, eux, ils sont vraiment jeunes.",
-      "L'amour, c'est comme un bon livre : on a envie de le relire encore et encore... et de le partager avec ceux qu'on aime.",
-      "Si la vie te donne des citrons, fais une tarte au citron meringuée ! ... et si t'as pas de meringue, mange-la nature, c'est plus sain.",
-      "Le travail, c'est comme un jeu vidéo : il y a des niveaux à passer, des défis à relever... et des récompenses à gagner.",
-      "La vie, c'est comme une pizza : il y en a pour tous les goûts... et on peut la partager avec ses amis.",
-      "N'aie pas peur de demander de l'aide, on a tous besoin d'un coup de main de temps en temps ! ... sauf si tu es en train de cambrioler une banque.",
-      "Le bonheur, c'est comme un arc-en-ciel : il apparaît après la pluie... et il est magnifique.",
-      "Si tu te sens seul, chante ! ... ça libère les émotions et ça fait du bien au moral.",
-      "La vie est un voyage, profite de la route ! ... et admire le paysage.",
-      "Ris de bon cœur, ça fait du bien aux poumons... et ça oxygène le cerveau.",
-      "Ne juge pas les gens sur leurs erreurs, on en fait tous ! ... sauf les robots, eux, ils sont parfaits.",
-      "L'amour, c'est comme une plante : ça demande de l'attention, de l'eau... et beaucoup de lumière.",
-      "Si la vie te donne des pommes de terre, fais des frites ! ... et si t'as pas d'huile, fais-les au four, c'est plus sain.",
-      "Le travail, c'est comme une échelle : il faut gravir les échelons un par un pour atteindre le sommet.",
-      "La vie, c'est comme un film : il y a des moments drôles, des moments tristes... et une fin.",
-      "N'aie pas peur de tes défauts, ils te rendent unique ! ... sauf si ton défaut c'est de manger des chaussettes sales.",
-      "Le bonheur, c'est comme un bon café : ça réveille, ça stimule... et ça donne envie de commencer la journée du bon pied.",
-      "Si tu te sens stressé, va faire du sport ! ... ça défoule et ça libère les endorphines.",
-      "La vie est un cadeau, prends-en soin ! ... et n'oublie pas de la remercier.",
-      "Ris de bon cœur, ça fait travailler les muscles du visage... et ça donne un air plus jeune.",
-      "Ne juge pas les gens sur leurs goûts vestimentaires, l'habit ne fait pas le moine ! ... sauf si c'est un costume de banane, là, tu peux te poser des questions.",
-      "L'amour, c'est comme une bonne musique : ça adoucit les mœurs et ça fait du bien à l'âme.",
-      "Si la vie te donne des raisins, fais du vin ! ... et si t'as pas de pressoir, mange-les, c'est bon pour la santé.",
-      "Le travail, c'est comme un jardin : il faut semer, arroser, désherber... pour récolter les fruits de son labeur.",
-      "La vie, c'est comme une montagne russe : il y a des hauts, des bas, des virages... mais c'est toujours excitant.",
-      "N'aie pas peur de dire ce que tu ressens, c'est important de communiquer... sauf si tu as envie de dire à ton patron qu'il est incompétent.",
-      "Le bonheur, c'est comme un bon livre : on s'y plonge avec plaisir et on en ressort enrichi.",
-      "Si tu te sens stressé, va faire un tour à la bibliothèque ! ... le silence et l'odeur des livres te feront du bien.",
-      "La vie est un cadeau, savoure chaque instant ! ... comme une glace à l'italienne un jour d'été.",
-      "L'amour, c'est comme un puzzle : il faut trouver les bonnes pièces pour que tout s'assemble.",
-      "La vie, c'est comme une forêt : il y a des arbres, des fleurs, des animaux... et des surprises à chaque coin de chemin.",
-      "N'aie pas peur de tes rêves, ils te montrent le chemin ! ... sauf si tu rêves que tu es poursuivi par un ours en tutu.",
-      "Le bonheur, c'est comme un bon feu de camp : ça réchauffe, ça éclaire... et ça fait des guimauves grillées.",
-      "Si tu te sens seul, appelle ta grand-mère ! ... elle sera ravie de te parler et de te donner des conseils.",
-      "La vie est un voyage, explore de nouveaux horizons ! ... mais n'oublie pas de prendre ton maillot de bain.",
-      "Ris de bon cœur, ça fait du bien aux zygomatiques... et ça attire les gens sympathiques.",
-      "Ne juge pas les gens sur leur accent, c'est ce qui fait leur charme ! ... même si tu ne comprends pas tout ce qu'ils disent.",
-      "L'amour, c'est comme une bonne recette : il faut les bons ingrédients et beaucoup d'amour pour que ça marche.",
-      "Si la vie te donne des tomates cerises, fais une salade ! ... et si t'as pas de vinaigrette, mange-les comme ça, c'est délicieux.",
-      "Le travail, c'est comme une ruche : chacun a son rôle et travaille pour le bien commun.",
-      "La vie, c'est comme une chanson : il y a des couplets, des refrains... et des moments forts.",
-      "N'aie pas peur de dire \"je suis désolé\", ça peut réparer beaucoup de choses... sauf une assiette cassée.",
-      "Le bonheur, c'est comme un bon bain de soleil : ça réchauffe, ça détend... et ça donne bonne mine.",
-      "Si tu te sens stressé, va faire du coloriage ! ... ça détend et ça libère la créativité.",
-      "La vie est un cadeau, profite-en ! ... comme un enfant qui déballe ses cadeaux de Noël.",
-      "Ris de bon cœur, ça fait du bien au cœur... et ça éloigne les médecins.",
-      "Ne juge pas les gens sur leur origine, on est tous citoyens du monde ! ... sauf les extraterrestres.",
-      "L'amour, c'est comme un bon film : ça te fait rire, ça te fait pleurer... et ça te fait réfléchir.",
-      "Si la vie te donne des kiwis, fais une salade de fruits ! ... et si t'as pas d'autres fruits, mange-les avec une cuillère, c'est rafraîchissant.",
-      "Le travail, c'est comme un escalier : il faut monter les marches une par une pour atteindre son objectif.",
-      "La vie, c'est comme une pièce de théâtre : il y a des acteurs, des décors... et une histoire à raconter.",
-      "N'aie pas peur de tes émotions, elles te guident ! ... sauf si c'est la colère, là, essaie de respirer un bon coup.",
-      "Le bonheur, c'est comme un bon gâteau : ça se partage avec ceux qu'on aime.",
-      "Si tu te sens triste, écoute de la musique classique ! ... ça apaise l'âme et ça élève l'esprit.",
-      "La vie est un voyage, découvre de nouvelles cultures ! ... et goûte à des plats exotiques.",
-      "Ris de bon cœur, ça fait du bien aux abdos... et ça muscle le diaphragme.",
-      "Ne juge pas les gens sur leur handicap, ils ont une force intérieure incroyable ! ... et ils peuvent te donner une leçon de vie.",
-      "L'amour, c'est comme un bonbon : ça fond dans la bouche et ça laisse un goût sucré.",
-      "Si la vie te donne des bananes, fais un smoothie ! ... et si t'as pas de blender, écrase-les avec une fourchette, ça fera l'affaire.",
-      "Le travail, c'est comme une graine : il faut la planter, l'arroser... et attendre qu'elle germe.",
-      "La vie, c'est comme un arc-en-ciel : elle est belle, colorée... et éphémère.",
-      "N'aie pas peur de dire \"merci\", c'est un mot magique qui fait plaisir à entendre... et qui ne coûte rien.",
-      "Le bonheur, c'est comme un bon thé : ça réchauffe, ça réconforte... et ça fait du bien au corps et à l'esprit.",
-      "Le travail, c'est comme une fourmi : petit mais costaud, il arrive à déplacer des montagnes... de dossiers.",
-      "La vie, c'est comme une pizza : il y a des ingrédients de base, et on peut ajouter ce qu'on veut pour la personnaliser.",
-      "N'aie pas peur de dire \"je ne sais pas\", c'est une preuve d'intelligence... et ça t'évite de dire des bêtises.",
-      "Le bonheur, c'est comme un bon film : on en ressort avec des étoiles plein les yeux et l'envie de le partager.",
-      "Si tu te sens stressé, va au musée ! ... l'art a le pouvoir d'apaiser l'âme et de stimuler l'imagination.",
-      "La vie est un cadeau, déballe-le avec enthousiasme ! ... comme un enfant qui découvre un nouveau jouet.",
-      "Ris de bon cœur, ça fait du bien aux oreilles... et ça les débouche.",
-      "Ne juge pas les gens sur leur nationalité, on est tous frères et sœurs ! ... sauf les Martiens.",
-      "L'amour, c'est comme un bon gâteau : ça se savoure lentement et ça laisse un goût agréable en bouche.",
-      "Si la vie te donne des pommes, fais une compote ! ... et si t'as pas de sucre, mets-y du sirop d'érable, c'est plus québécois.",
-      "Le travail, c'est comme un marathon : il faut s'entraîner, persévérer... et franchir la ligne d'arrivée.",
-      "La vie, c'est comme une chanson : il y a des moments calmes, des moments forts... et des moments inoubliables.",
-      "N'aie pas peur de dire \"je t'aime\", ça fait toujours plaisir à entendre... sauf si tu le dis à ton grille-pain.",
-      "Le bonheur, c'est comme un bon bain chaud : ça détend, ça relaxe... et ça fait oublier les soucis.",
-      "Si tu te sens seul, va au cinéma ! ... partager des émotions avec d'autres personnes, ça fait du bien.",
-      "La vie est un cadeau, prends-en soin ! ... comme une plante fragile qu'il faut arroser et protéger.",
-      "Ris de bon cœur, ça fait du bien aux poumons... et ça les aère.",
-      "Ne juge pas les gens sur leur religion, chacun a le droit de croire en ce qu'il veut ! ... même au Père Noël.",
-      "L'amour, c'est comme un bon feu de cheminée : ça réchauffe, ça crépite... et ça dure longtemps si on l'entretient.",
-      "Si la vie te donne des poires, fais une tarte ! ... et si t'as pas de pâte, mange-les avec du chocolat, c'est un délice.",
-      "Le travail, c'est comme une abeille : il butine de fleur en fleur pour récolter le nectar... et produire du miel.",
-      "La vie, c'est comme une symphonie : il y a des instruments, des mélodies... et une harmonie à trouver.",
-      "298. N'aie pas peur de dire \"pardon\", ça peut désamorcer bien des conflits... et ça allège le cœur.",
-      "299. Le bonheur, c'est comme un bon massage : ça détend les muscles et ça apaise l'esprit.",
-      "300. Si tu te sens stressé, va faire du jardinage ! ... le contact avec la terre et les plantes te fera du bien.",
-      "La vie est un cadeau, partage-le avec les autres ! ... Offre un sourire, un mot gentil, un geste d'amitié.",
-      "Ris de bon cœur, ça fait du bien aux zygomatiques... et ça les empêche de rouiller.",
-      "Ne juge pas les gens sur leur situation financière, la richesse est intérieure ! ... sauf si c'est Picsou, là, tu peux être jaloux.",
-      "L'amour, c'est comme une bonne chanson : ça te donne envie de chanter et de danser.",
-      "Si la vie te donne des fraises, fais une tarte ! ... Et si t'as pas de pâte, mange-les avec de la crème fraîche, c'est un délice.",
-      "Le travail, c'est comme un jardinier : il sème, il arrose, il entretient... pour que les plantes poussent et fleurissent.",
-      "La vie, c'est comme une boîte de chocolats : on ne sait jamais sur quoi on va tomber, mais il y a toujours une saveur qui nous plaît.",
-      "N'aie pas peur de dire \"je me suis trompé\", c'est une preuve d'humilité... et ça permet de repartir sur de bonnes bases.",
-      "Le bonheur, c'est comme un bon feu de cheminée : ça réchauffe l'atmosphère et ça crée une ambiance chaleureuse.",
-      "Si tu te sens stressé, va faire un tour au parc ! ... La nature a le pouvoir d'apaiser les tensions et de calmer l'esprit.",
-      "La vie est un cadeau, ouvre-le avec curiosité ! ... Découvre de nouvelles choses, explore de nouveaux horizons, rencontre de nouvelles personnes.",
-      "Ris de bon cœur, ça fait du bien au moral... et ça donne envie de sourire à la vie.",
-      "Ne juge pas les gens sur leur âge, l'important c'est d'avoir un esprit jeune ! ... sauf si c'est un bébé qui essaie de conduire une voiture.",
-      "L'amour, c'est comme un bon vin : ça se bonifie avec le temps.",
-      "Si la vie te donne des citrons, fais une limonade ! ... Et si t'as pas de sucre, mets-y du miel, c'est plus sain.",
-      "Le travail, c'est comme un escaladeur : il faut s'accrocher et ne pas avoir le vertige pour atteindre le sommet.",
-      "La vie, c'est comme une pièce de théâtre : il y a des acteurs, des décors, des costumes... et une histoire à raconter.",
-      "N'aie pas peur de dire \"je t'aime\", ces trois mots peuvent changer une vie... sauf si tu les dis à ton poisson rouge.",
-      "Le bonheur, c'est comme un bon bain moussant : ça détend, ça parfume... et ça fait des bulles.",
-      "Si tu te sens seul, va danser ! ... La musique et le mouvement te feront oublier tes soucis et te donneront de l'énergie.",
-      "La vie est un cadeau, prends-en soin ! ... comme un trésor précieux qu'il faut chérir.",
-      "Ris de bon cœur, ça fait du bien aux abdos... et ça les fait travailler sans effort.",
-      "Ne juge pas les gens sur leur apparence physique, la beauté est relative ! ... sauf si c'est un extraterrestre avec trois yeux et des antennes.",
-      "L'amour, c'est comme un bon livre : on a envie de le lire et de le relire sans jamais se lasser.",
-      "Si la vie te donne des bananes, fais un gâteau ! ... Et si t'as pas de farine, mange-les avec du chocolat, c'est un délice.",
-      "Le travail, c'est comme un marathonien : il faut de l'endurance, de la persévérance... et une bonne paire de chaussures.",
-      "La vie, c'est comme une chanson : il y a des paroles, une mélodie... et des émotions à partager.",
-      "N'aie pas peur de dire \"je ne suis pas d'accord\", c'est important d'exprimer son opinion... sauf si tu es en désaccord avec un ours en colère.",
-      "Le bonheur, c'est comme un bon café : ça réveille, ça stimule... et ça donne envie de démarrer la journée du bon pied.",
-      "Si tu te sens stressé, va faire de la méditation ! ... La respiration et la concentration te permettront de retrouver ton calme intérieur.",
-      "La vie est un cadeau, profite de chaque instant ! ... Danse sous la pluie, chante à tue-tête, ris aux éclats.",
-      "Ris de bon cœur, ça fait du bien aux cordes vocales... et ça les échauffe pour chanter.",
-      "Ne juge pas les gens sur leurs opinions politiques, chacun a le droit de penser différemment ! ... sauf si c'est un dictateur en herbe.",
-      "L'amour, c'est comme un bon chocolat chaud : ça réchauffe le cœur et ça adoucit les mœurs.",
-      "Si la vie te donne des framboises, fais une tarte ! ... Et si t'as pas de pâte, mange-les avec de la crème chantilly, c'est un délice.",
-      "Le travail, c'est comme un architecte : il conçoit, il dessine, il construit... pour créer quelque chose de beau et d'utile.",
-      "La vie, c'est comme un jeu de société : il y a des règles, des stratégies... et des gagnants et des perdants.",
-      "N'aie pas peur de dire \"je t'aime\", ces trois mots peuvent faire des miracles... sauf si tu les dis à ton cactus.",
-      "Le bonheur, c'est comme un bon bain de soleil : ça réchauffe la peau et ça donne bonne mine.",
-      "Si tu te sens stressé, va faire du yoga ! ... Les postures et la respiration te permettront de te détendre et de te recentrer.",
-      "La vie est un cadeau, ouvre-le avec émerveillement ! ... Laisse-toi surprendre par la beauté du monde et les merveilles de la nature.",
-      "Ris de bon cœur, ça fait du bien au diaphragme... et ça le muscle pour rire encore plus fort.",
-      "Ne juge pas les gens sur leur origine sociale, l'important c'est la personne qu'ils sont ! ... sauf si c'est un vampire, là, tu peux prendre tes distances.",
-      "L'amour, c'est comme une bonne musique : ça te transporte dans un autre monde et ça te fait vibrer.",
-      "Si la vie te donne des myrtilles, fais une tarte ! ... Et si t'as pas de pâte, mange-les avec du yaourt, c'est un délice.",
-      "Le travail, c'est comme un chef d'orchestre : il dirige, il coordonne, il harmonise... pour que tous les instruments jouent ensemble.",
-      "La vie, c'est comme un film : il y a des scènes d'action, des scènes d'amour, des scènes drôles... et une fin.",
-      "N'aie pas peur de dire \"je suis désolé\", ça permet de réparer ses erreurs et de repartir du bon pied... sauf si tu t'excuses auprès d'un robot aspirateur.",
-      "Le bonheur, c'est comme un bon massage : ça détend les muscles et ça apaise l'esprit.",
-      "Si tu te sens seul, va au théâtre ! ... Laisse-toi transporter par l'histoire et les émotions des personnages.",
-      "La vie est un cadeau, prends-en soin ! ... comme une fleur délicate qu'il faut arroser et protéger du soleil.",
-      "Ris de bon cœur, ça fait du bien aux joues... et ça les rend toutes roses.",
-      "Ne juge pas les gens sur leur religion, chacun a le droit de croire en ce qu'il veut ! ... sauf si c'est une secte qui sacrifie des chatons.",
-      "L'amour, c'est comme un bon livre : on a envie de le relire encore et encore pour retrouver les émotions qu'il nous procure.",
-      "Si la vie te donne des pêches, fais une tarte ! ... Et si t'as pas de pâte, mange-les avec de la glace à la vanille, c'est un délice.",
-      "Le travail, c'est comme un explorateur : il découvre de nouveaux territoires, il relève des défis... et il repousse ses limites.",
-      "La vie, c'est comme une chanson : il y a des couplets, des refrains... et des moments forts en émotions.",
-      "N'aie pas peur de dire \"merci\", c'est un mot magique qui fait chaud au cœur... et qui ne coûte rien.",
-      "Le bonheur, c'est comme un bon bain chaud : ça détend, ça relaxe... et ça fait oublier les soucis de la journée.",
-      "Si tu te sens stressé, va faire un tour en forêt ! ... Le calme et la beauté de la nature t'aideront à te ressourcer.",
-      "La vie est un cadeau, déballe-le avec joie ! ... Et si tu n'aimes pas ce qu'il y a dedans, échange-le contre un autre cadeau.",
-      "Ris de bon cœur, ça fait du bien aux muscles du visage... et ça les empêche de s'affaisser.",
-      "Ne juge pas les gens sur leur couleur de cheveux, l'important c'est ce qu'il y a en dessous ! ... sauf si c'est une perruque qui cache un extraterrestre.",
-      "L'amour, c'est comme un bon film : ça te fait rêver, ça te fait vibrer... et ça te donne envie de le revoir encore et encore.",
-      "Si la vie te donne des abricots, fais une tarte ! ... Et si t'as pas de pâte, mange-les avec du fromage blanc, c'est un délice.",
-      "Le travail, c'est comme un jardinier : il plante des graines, il les arrose, il les protège... pour qu'elles deviennent de belles fleurs.",
-      "La vie, c'est comme une boîte de Lego : il y a des pièces de toutes les formes et de toutes les couleurs, et on peut construire ce qu'on veut.",
-      "N'aie pas peur de dire \"je ne comprends pas\", c'est le meilleur moyen d'apprendre... sauf si tu ne comprends pas pourquoi les poules ne volent pas.",
-      "Le bonheur, c'est comme un bon bain chaud : ça détend, ça relaxe... et ça fait du bien au moral.",
-      "Si tu te sens stressé, va faire de la peinture ! ... Laisse libre cours à ta créativité et exprime tes émotions sur la toile.",
-      "La vie est un cadeau, ouvre-le avec gratitude ! ... Remercie la vie pour toutes les belles choses qu'elle t'offre.",
-      "Ris de bon cœur, ça fait du bien aux oreilles... et ça les débouche.",
-      "Ne juge pas les gens sur leur accent, c'est ce qui fait leur charme ! ... sauf si c'est un accent extraterrestre qui te fait exploser la tête.",
-      "L'amour, c'est comme une bonne musique : ça te donne envie de danser et de chanter.",
-      "Si la vie te donne des prunes, fais une confiture ! ... Et si t'as pas de sucre, mange-les avec du pain et du beurre, c'est un délice.",
-      "Le travail, c'est comme un chef cuisinier : il mélange les ingrédients, il les assaisonne, il les cuit... pour créer un plat délicieux.",
-      "La vie, c'est comme un jeu vidéo : il y a des niveaux à passer, des défis à relever... et des récompenses à gagner.",
-      "N'aie pas peur de dire \"je t'aime\", ces trois mots peuvent changer une vie... sauf si tu les dis à ton robot aspirateur.",
-      "Le bonheur, c'est comme un bon feu de camp : ça réchauffe, ça éclaire... et ça fait des chamallows grillés.",
-      "Si tu te sens seul, va au zoo ! ... Observer les animaux te fera oublier tes soucis et te remplira de joie.",
-      "La vie est un cadeau, prends-en soin ! ... comme une plante fragile qu'il faut arroser et protéger du froid.",
-      "Ris de bon cœur, ça fait du bien aux poumons... et ça les aère.",
-      "Ne juge pas les gens sur leur style vestimentaire, chacun a ses goûts ! ... sauf si c'est un costume de poulet, là, tu peux te poser des questions.",
-      "L'amour, c'est comme un bon livre : on a envie de le lire et de le relire sans jamais se lasser.",
-      "Si la vie te donne des cerises, fais une tarte ! ... Et si t'as pas de pâte, mange-les avec du chocolat, c'est un délice.",
-      "Le travail, c'est comme un musicien : il joue de son instrument, il crée des mélodies... et il partage ses émotions avec le public.",
-      "La vie, c'est comme une chanson : il y a des couplets, des refrains... et des moments forts en émotions.",
-      "N'aie pas peur de dire \"merci\", c'est un mot magique qui fait chaud au cœur... et qui ne coûte rien.",
-      "Le bonheur, c'est comme un bon massage : ça détend les muscles et ça apaise l'esprit.",
-      "Si tu te sens stressé, va faire de la randonnée ! ... La marche et le contact avec la nature te permettront de te ressourcer.",
-    ];
-
-    function getStartOfWeek(date) {
-      var result = new Date(date);
-      result.setHours(0, 0, 0, 0);
-      var day = result.getDay();
-      var diff = result.getDate() - day + (day === 0 ? -6 : 1);
-      result.setDate(diff);
-      return result;
-    }
-
     function getCurrentWeekIndex() {
-      const today = new Date();
-      const startOfCurrentWeek = getStartOfWeek(today);
-      return Math.floor((startOfCurrentWeek - bottomStartDate) / (7 * 24 * 60 * 60 * 1000));
-    }
-
-    function getWeeklyProgress() {
-      const today = new Date();
-      const startOfWeek = getStartOfWeek(today);
-      const nextWeek = new Date(startOfWeek);
-      nextWeek.setDate(startOfWeek.getDate() + 7);
-      
-      // Calculate progress through the week (0 to 1)
-      return (today - startOfWeek) / (nextWeek - startOfWeek);
-    }
-
-    function randomQuote() {
-      return quotes[Math.floor(Math.random() * quotes.length)];
+        var today = new Date();
+        var diffTime = Math.abs(today.getTime() - startDate.getTime());
+        return Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000));
     }
 
     function updateCurrentWeek() {
-      var currentIndex = getCurrentWeekIndex();
-      var weeks = document.getElementsByClassName('week');
-      
-      // Utilisation d'une boucle for traditionnelle au lieu de forEach
-      for (var i = 0; i < weeks.length; i++) {
-        var week = weeks[i];
-        if (i < topYears * weeksPerYear) continue;
+        var currentIndex = getCurrentWeekIndex();
+        var weeks = document.getElementsByClassName('week');
         
-        var bottomIndex = i - (topYears * weeksPerYear) - 1;
-        if (bottomIndex < currentIndex) {
-          week.className = 'week filled';
-        } else if (bottomIndex === currentIndex) {
-          week.className = 'week filling';
-          week.style.backgroundImage = 'linear-gradient(to right, black ' + 
-            (getWeeklyProgress() * 100) + '%, rgb(205, 205, 205) ' + 
-            (getWeeklyProgress() * 100) + '%)';
-        } else {
-          week.className = 'week';
+        for (var i = 0; i < weeks.length; i++) {
+            if (i < currentIndex && weeks[i].className.indexOf('filled') === -1) {
+                weeks[i].className += ' filled';
+                weeks[i].style.background = getRandomColor();
+            }
         }
-      }
-    }
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
     }
   </script>
 </body>
