@@ -46,7 +46,7 @@
       border-radius: 20px;
       background: rgb(205, 205, 205);
       width: calc(100% - 3px);
-      height: calc(100% - 3px);
+      height: calc(100% - 2px);
     }
 
     .filled {
@@ -57,8 +57,9 @@
 <body>
   <div id="container"></div>
   <script>
-    // Utiliser var au lieu de const/let pour iOS 10.3
+    // Ajouter la variable de date actuelle en haut du script
     var startDate = new Date('1984-11-18');
+    var currentDate = new Date(); // Nouvelle variable
     var weeksPerYear = 52;
     var totalYears = 80;
     var totalWeeks = totalYears * weeksPerYear;
@@ -98,6 +99,12 @@
             // Vérifier une fois par heure
             setInterval(updateCurrentWeek, 3600000);
             
+            // Ajouter le refresh quotidien
+            setDailyRefresh();
+            
+            // TEST: Ajouter le refresh toutes les 5 secondes
+            //setTestRefresh();
+            
         } catch(e) {
             console.log('Erreur:', e);
             alert('Une erreur est survenue: ' + e.message);
@@ -105,12 +112,12 @@
     };
 
     function getCurrentWeekIndex() {
-        var today = new Date();
-        var diffTime = Math.abs(today.getTime() - startDate.getTime());
+        var diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
         return Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000));
     }
 
     function updateCurrentWeek() {
+        currentDate = new Date(); // Mettre à jour la date actuelle
         var currentIndex = getCurrentWeekIndex();
         var weeks = document.getElementsByClassName('week');
         
@@ -120,6 +127,29 @@
                 weeks[i].style.background = getRandomColor();
             }
         }
+    }
+
+    // Ajouter cette nouvelle fonction
+    function setDailyRefresh() {
+        var now = new Date();
+        var night = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() + 1, // demain
+            0, 0, 0 // minuit
+        );
+        var msToMidnight = night.getTime() - now.getTime();
+
+        setTimeout(function() {
+            window.location.reload();
+        }, msToMidnight);
+    }
+
+    // Ajouter cette fonction temporaire de test
+    function setTestRefresh() {
+        setInterval(function() {
+            window.location.reload();
+        }, 5000); // 5000ms = 5 secondes
     }
   </script>
 </body>
