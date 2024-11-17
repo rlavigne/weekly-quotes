@@ -36,21 +36,31 @@
       display: grid;
       -webkit-grid-template-columns: repeat(52, 1fr);
       grid-template-columns: repeat(52, 1fr);
+      gap: 2px;
       width: calc(100vw - 40px);
-      height: calc(100vh - 40px);
-      -webkit-overflow-scrolling: touch;
+      aspect-ratio: 52/80;
+      max-height: calc(100vh - 40px);
     }
 
     .week {
-      -webkit-border-radius: 20px;
-      border-radius: 20px;
-      background: rgb(205, 205, 205);
-      width: calc(100% - 3px);
-      height: calc(100% - 1px);
+      position: relative;
+      width: 100%;
+      padding-bottom: 100%;
     }
 
-    .filled {
-      background: black;
+    .week::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgb(205, 205, 205);
+      border-radius: 50%;
+    }
+
+    .week.filled::after {
+      background: var(--random-color, black);
     }
   </style>
 </head>
@@ -89,8 +99,8 @@
                 weekDiv.className = 'week';
                 
                 if (i < currentWeekIndex) {
-                    weekDiv.className += ' filled';
-                    weekDiv.style.background = getRandomColor();
+                    weekDiv.classList.add('filled');
+                    setWeekColor(weekDiv, getRandomColor());
                 }
                 
                 container.appendChild(weekDiv);
@@ -150,6 +160,11 @@
         setInterval(function() {
             window.location.reload();
         }, 5000); // 5000ms = 5 secondes
+    }
+
+    // Modifier la fonction qui ajoute les couleurs
+    function setWeekColor(weekDiv, color) {
+        weekDiv.style.setProperty('--random-color', color);
     }
   </script>
 </body>
